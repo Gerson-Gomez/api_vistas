@@ -153,8 +153,9 @@ class Albums extends Component {
     render() {
         const { form, albumSeleccionado } = this.state;
         const styles = {
-            backgroundColor: '#F8C471',
+            backgroundColor: '#E9AE05',
             padding: '20px',
+            minHeight: '100vh',
         };
 
         return (
