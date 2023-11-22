@@ -5,7 +5,7 @@ import Navbar from './componentes/Navbar';
 import Comentarios from './componentes/Comentarios';
 import Artistas from './componentes/Artistas';
 import Albums from './componentes/Albums';
-
+import Footer from './componentes/Footer';
 
 
 function App() {  
@@ -17,6 +17,7 @@ function App() {
       <Route path="/artistas" element={<Artistas />} />
       <Route path="/albums" element={<Albums />} />
     </Routes>
+    <Footer/>
   </Router>
 );
 }
