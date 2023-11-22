@@ -5,6 +5,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'reactstrap';
 import Select from 'react-select';
+import DatePicker from "react-datepicker";
+import { format } from 'date-fns';
+import "react-datepicker/dist/react-datepicker.css";
 
 const url = "http://127.0.0.1:8000/api/albums/";
 
@@ -18,7 +21,7 @@ class Albums extends Component {
         form: {
             id: '',
             nombre_album: '',
-            lanzamiento: '',
+            lanzamiento: new Date(), // Inicializar con la fecha actual
             id_artista: '',
             tipoModal: '',
         },
@@ -41,7 +44,11 @@ class Albums extends Component {
 
     peticionPost = async () => {
         delete this.state.form.id;
-        await axios.post(url, this.state.form).then(response => {
+
+        // Formatear la fecha antes de enviarla al servidor
+        const formattedDate = format(this.state.form.lanzamiento, 'yyyy-MM-dd');
+
+        await axios.post(url, { ...this.state.form, lanzamiento: formattedDate }).then(response => {
             this.modalInsertar();
             this.peticionGet();
         }).catch(error => {
@@ -50,7 +57,10 @@ class Albums extends Component {
     }
 
     peticionPut = () => {
-        axios.put(url + this.state.form.id, this.state.form).then(response => {
+        // Formatear la fecha antes de enviarla al servidor
+        const formattedDate = format(this.state.form.lanzamiento, 'yyyy-MM-dd');
+
+        axios.put(url + this.state.form.id, { ...this.state.form, lanzamiento: formattedDate }).then(response => {
             this.modalInsertar();
             this.peticionGet();
         });
@@ -73,7 +83,7 @@ class Albums extends Component {
             form: {
                 id: album.id,
                 nombre_album: album.nombre_album,
-                lanzamiento: album.lanzamiento,
+                lanzamiento: new Date(album.lanzamiento), // Convertir la fecha a objeto Date
                 id_artista: album.id_artista,
             }
         });
@@ -117,6 +127,15 @@ class Albums extends Component {
         console.log(this.state.albumSeleccionado);
     }
 
+    handleDateChange = (date) => {
+        this.setState({
+            form: {
+                ...this.state.form,
+                lanzamiento: date
+            }
+        });
+    }
+
     cargarDatosArtistas = () => {
         axios.get("http://127.0.0.1:8000/api/artistas")
             .then(response => {
@@ -130,18 +149,6 @@ class Albums extends Component {
                 console.log(error.message);
             });
     }
-    /* 
-    cargarDatosArtistas = () => {
-        // Realiza una llamada a la API de artistas
-        axios.get("http://127.0.0.1:8000/api/artistas")
-            .then(response => {
-                // Almacena los datos de artistas en el estado
-                this.setState({ artistas: response.data });
-            })
-            .catch(error => {
-                console.log(error.message);
-            });
-    }*/
 
     render() {
         const { form, albumSeleccionado } = this.state;
@@ -151,9 +158,8 @@ class Albums extends Component {
         };
 
         return (
-            
-        <div  style={styles}>            
-        <div class="container" >
+            <div style={styles}>
+                <div class="container">
                     <div class="row">
                         <div className='col-6'>
                             <h4>Registrar Álbumes.</h4>
@@ -164,9 +170,9 @@ class Albums extends Component {
                             </button>
                         </div>
                     </div>
-        
+
                     <hr></hr>
-                    <table class="table table-striped " >
+                    <table class="table table-striped ">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -177,7 +183,6 @@ class Albums extends Component {
                             </tr>
                         </thead>
                         <tbody>
-
                             {this.state.data.map(album => {
                                 return (
                                     <tr key={album.id}>
@@ -196,91 +201,99 @@ class Albums extends Component {
                             })}
                         </tbody>
                     </table>
-               
-                <Modal isOpen={this.state.modalEditar}>
-                    <ModalHeader style={{ display: 'block' }}>
-                        Editar album
-                        <span style={{ float: 'right' }} onClick={this.modalEditar}>x</span>
-                    </ModalHeader>
-                    <ModalBody>
-                        <div className="form-group">
-                            <label htmlFor="id">ID</label>
-                            <input className="form-control" type="text" name="id" id="id" readOnly value={albumSeleccionado ? albumSeleccionado.id : ''} />
-                            <br />
-                            <label htmlFor="nombre_album">Nombre del Álbum</label>
-                            <input className="form-control" type="text" name="nombre_album" onChange={this.handleChange} value={albumSeleccionado ? albumSeleccionado.nombre_album : ''} />
-                            <br />
-                            <label htmlFor="lanzamiento">Lanzamiento</label>
-                            <input className="form-control" type="text" name="lanzamiento" onChange={this.handleChange} value={albumSeleccionado ? albumSeleccionado.lanzamiento : ''} />
-                            <br />
-                            <label htmlFor="id_artista">Artista</label>
-                            <Select
-                                options={this.state.artistasOptions}
-                                onChange={(selectedOption) => this.setState({ albumSeleccionado: { ...this.state.albumSeleccionado, id_artista: selectedOption.value } })}
-                                value={this.state.artistasOptions.find(option => option.value === (this.state.albumSeleccionado ? this.state.albumSeleccionado.id_artista : ''))}
-                            />
+
+                    <Modal isOpen={this.state.modalEditar}>
+                        <ModalHeader style={{ display: 'block' }}>
+                            Editar album
+                            <span style={{ float: 'right' }} onClick={this.modalEditar}>x</span>
+                        </ModalHeader>
+                        <ModalBody>
+                            <div className="form-group">
+                                <label htmlFor="id">ID</label>
+                                <input className="form-control" type="text" name="id" id="id" readOnly value={albumSeleccionado ? albumSeleccionado.id : ''} />
+                                <br />
+                                <label htmlFor="nombre_album">Nombre del Álbum</label>
+                                <input className="form-control" type="text" name="nombre_album" onChange={this.handleChange} value={albumSeleccionado ? albumSeleccionado.nombre_album : ''} />
+                                <br/>
+                                
+
+                                <label htmlFor="id_artista">Artista</label>
+                               
+                                <Select
+                                    options={this.state.artistasOptions}
+                                    onChange={(selectedOption) => this.setState({ albumSeleccionado: { ...this.state.albumSeleccionado, id_artista: selectedOption.value } })}
+                                    value={this.state.artistasOptions.find(option => option.value === (this.state.albumSeleccionado ? this.state.albumSeleccionado.id_artista : ''))}
+                                /> <br />
+
+                                <label htmlFor="lanzamiento">Lanzamiento ㅤㅤ</label>
+                                <DatePicker
+                                    selected={form ? form.lanzamiento : new Date()} // La fecha seleccionada
+                                    onChange={this.handleDateChange} // Función para manejar cambios en la fecha
+                                />
+                            
                             </div>
                         </ModalBody>
-                    <ModalFooter>
-                        <button className="btn btn-primary" onClick={this.guardarEdicion}>Guardar Cambios</button>
-                        <button className="btn btn-danger" onClick={this.modalEditar}>Cancelar</button>
-                    </ModalFooter>
-                </Modal>
+                        <ModalFooter>
+                            <button className="btn btn-primary" onClick={this.guardarEdicion}>Guardar Cambios</button>
+                            <button className="btn btn-danger" onClick={this.modalEditar}>Cancelar</button>
+                        </ModalFooter>
+                    </Modal>
 
-                <Modal isOpen={this.state.modalInsertar}>
-                    <ModalHeader style={{ display: 'block' }}>
-                    Registrar nuevo album
-                        <span style={{ float: 'right' }} onClick={() => this.modalInsertar()}>x</span>
-                    </ModalHeader>
-                    <ModalBody>
-                        <div className="form-group">
-                            <label htmlFor="id">ID</label>
-                            <input className="form-control" type="text" name="id" id="id" readOnly onChange={this.handleChange} value={form ? form.id : this.state.data.length + 1} />
-                            <br />
-                            <label htmlFor="nombre_album">Nombre del Álbum</label>
-                            <input className="form-control" type="text" name="nombre_album" onChange={this.handleChange} value={form ? form.nombre_album : ''} />
-                            <br />
-                            <label htmlFor="lanzamiento">Lanzamiento</label>
-                            <input className="form-control" type="text" name="lanzamiento" onChange={this.handleChange} value={form ? form.lanzamiento : ''} />
-                            <br />
-                            <label htmlFor="id_artista">Artista</label>
-                            <Select
-                                options={this.state.artistasOptions}
-                                onChange={(selectedOption) => this.setState({ form: { ...this.state.form, id_artista: selectedOption.value } })}
-                                value={this.state.artistasOptions.find(option => option.value === (this.state.form ? this.state.form.id_artista : ''))}
-                            />
-                        </div>
-                    </ModalBody>
+                    <Modal isOpen={this.state.modalInsertar}>
+                        <ModalHeader style={{ display: 'block' }}>
+                            Registrar nuevo album
+                            <span style={{ float: 'right' }} onClick={() => this.modalInsertar()}>x</span>
+                        </ModalHeader>
+                        <ModalBody>
+                            <div className="form-group">
+                                <label htmlFor="id">ID</label>
+                                <input className="form-control" type="text" name="id" id="id" readOnly onChange={this.handleChange} value={form ? form.id : this.state.data.length + 1} />
+                                <br />
+                                <label htmlFor="nombre_album">Nombre del Álbum</label>
+                                <input className="form-control" type="text" name="nombre_album" onChange={this.handleChange} value={form ? form.nombre_album : ''} />
+                                <br />
+                                <label htmlFor="id_artista">Artista</label>
+                                <Select
+                                    options={this.state.artistasOptions}
+                                    onChange={(selectedOption) => this.setState({ form: { ...this.state.form, id_artista: selectedOption.value } })}
+                                    value={this.state.artistasOptions.find(option => option.value === (this.state.form ? this.state.form.id_artista : ''))}
+                                />
+                                  <br />
+                                <label htmlFor="lanzamiento">Lanzamiento ㅤㅤ</label>
+                                <DatePicker
+                                    selected={form ? form.lanzamiento : new Date()} // La fecha seleccionada
+                                    onChange={this.handleDateChange} // Función para manejar cambios en la fecha
+                                />
+                            </div>
+                        </ModalBody>
+                        <ModalFooter>
+                            {this.state.tipoModal === 'insertar' ? (
+                                <button className="btn btn-success" onClick={() => this.peticionPost()}>
+                                    Insertar
+                                </button>
+                            ) : (
+                                <button className="btn btn-primary" onClick={() => this.peticionPut()}>
+                                    Actualizar
+                                </button>
+                            )}
+                            <button className="btn btn-danger" onClick={() => this.modalInsertar()}>Cancelar</button>
+                        </ModalFooter>
+                    </Modal>
 
+                    <Modal isOpen={this.state.modalEliminar}>
+                        <ModalBody>
+                            ¿Estás seguro que deseas eliminar el álbum?
+                        </ModalBody>
+                        <ModalFooter>
+                            <button className="btn btn-danger" onClick={() => this.peticionDelete()}>Sí</button>
+                            <button className="btn btn-secondary" onClick={() => this.setState({ modalEliminar: false })}>No</button>
+                        </ModalFooter>
+                    </Modal>
 
-                    <ModalFooter>
-                        {this.state.tipoModal === 'insertar' ? (
-                            <button className="btn btn-success" onClick={() => this.peticionPost()}>
-                                Insertar
-                            </button>
-                        ) : (
-                            <button className="btn btn-primary" onClick={() => this.peticionPut()}>
-                                Actualizar
-                            </button>
-                        )}
-                        <button className="btn btn-danger" onClick={() => this.modalInsertar()}>Cancelar</button>
-                    </ModalFooter>
-                </Modal>
-
-                <Modal isOpen={this.state.modalEliminar}>
-                    <ModalBody>
-                        ¿Estás seguro que deseas eliminar el álbum?
-                    </ModalBody>
-                    <ModalFooter>
-                        <button className="btn btn-danger" onClick={() => this.peticionDelete()}>Sí</button>
-                        <button className="btn btn-secondary" onClick={() => this.setState({ modalEliminar: false })}>No</button>
-                    </ModalFooter>
-                </Modal>
-            
-        </div>
-  
-</div>
+                </div>
+            </div>
         );
     }
 }
+
 export default Albums;
